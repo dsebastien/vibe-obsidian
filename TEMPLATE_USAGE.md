@@ -264,48 +264,35 @@ Also review and clean up:
 - `documentation/` folder - update or remove template documentation
 - `TODO.md` - if present, review and update for your project
 
-## Creating Your First Release
+## Creating a Release
 
-For the first release, **do not** use automated version bumping. Instead:
+The release workflow is two-phase so the build-provenance attestation is bound to the exact commit the release tag points to (required for Obsidian community catalog review):
 
-1. Ensure your code is ready and all tests pass:
+1. **Prepare** (workflow dispatch on a branch): bumps `package.json`, `manifest.json`, and `versions.json`, generates the changelog, formats, builds and tests as a gate, commits (`chore(release): x.y.z`), tags that commit, then re-dispatches the workflow at the tag.
+2. **Publish** (dispatch at the tag, or a manually pushed tag): builds at the tagged commit, attests the artifacts with `actions/attest-build-provenance`, and creates the GitHub release with the necessary files.
 
-```bash
-bun run tsc
-bun run lint
-bun test
-bun run build
-```
+### Recommended: Workflow Dispatch
 
-2. Create and push a tag:
+1. Go to **Actions → Release** in your repository
+2. Select "Run workflow" on your branch (usually `main`)
+3. Enter the version number (e.g., `1.0.0`), leave **publish** unchecked
+4. Select "Run workflow" — the publish phase runs automatically after prepare succeeds
+
+### Alternative: Manual Tag
+
+Only if `manifest.json`'s `version` at the tagged commit already matches the tag (the publish job verifies this and fails otherwise):
 
 ```bash
 git tag 1.0.0
 git push origin 1.0.0
 ```
 
-3. The GitHub Actions release workflow will automatically:
-    - Build the plugin
-    - Generate a changelog
-    - Create a GitHub release with the necessary files
+Tags use bare SemVer with no `v` prefix, per the Obsidian plugin spec.
 
-## Subsequent Releases
+### Recovery
 
-For subsequent releases, you can either:
-
-### Manual Tag (Recommended for major releases)
-
-```bash
-git tag 1.1.0
-git push origin 1.1.0
-```
-
-### Workflow Dispatch
-
-1. Go to **Actions → Release** in your repository
-2. Click "Run workflow"
-3. Enter the version number (e.g., `1.1.0`)
-4. Click "Run workflow"
+- Prepare failed after the tag was pushed (e.g., the re-dispatch call failed): `gh workflow run release.yml --ref <version> -f version=<version> -f publish=true`
+- Prepare failed after the release commit was pushed but before tagging: re-run prepare with the same version; it detects the existing release commit and skips straight to tagging.
 
 ## Publishing to Obsidian Community Plugins
 
