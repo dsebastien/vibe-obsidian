@@ -7,7 +7,9 @@ depth = 2
 [install]
 auto = "auto"
 exact = true
-optional = false
+# Optional deps must stay enabled: @tailwindcss/cli needs the platform-specific
+# @parcel/watcher prebuild (optional dependency); without it `bun run build` fails.
+optional = true
 # Only install package versions published at least 3 days ago
 minimumReleaseAge = 259200
 # These packages will bypass the 3-day minimum age requirement
